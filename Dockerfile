@@ -13,4 +13,4 @@ COPY . .
 
 # Start aria2c's RPC daemon, then the bot
 CMD aria2c --enable-rpc --rpc-listen-all=false --rpc-secret="$ARIA2_RPC_SECRET" \
-    -D --dir=/app/downloads && python main.py
+    -D --dir=/app/downloads && python bot.py

@@ -30,27 +30,55 @@ leeching.
 
 ## Setup (GitHub Codespaces)
 
-1. Open this repo in a Codespace (Code → Codespaces → New codespace).
-2. Copy `.env.sample` to `.env` and fill in:
+1. Open this repo in a Codespace (Code → Codespaces → New codespace). The
+   `.devcontainer/devcontainer.json` automatically installs `ffmpeg`,
+   `aria2c`, and the Python dependencies when the Codespace is created.
+2. Add your secrets under repo → Settings → Secrets and variables →
+   Codespaces, then add each of:
    - `BOT_TOKEN`, `API_ID`, `API_HASH` — from @BotFather and https://my.telegram.org
    - `OWNER_ID` — your Telegram user ID
    - `ARIA2_RPC_SECRET` — any random string
-3. Build and run:
+   They'll be available as environment variables automatically next time
+   you open (or rebuild) the Codespace — no `.env` file needed.
+3. Run it:
    ```bash
-   docker build -t leech-encode-bot .
-   docker run --env-file .env leech-encode-bot
+   python bot.py
    ```
+   `bot.py` starts aria2c's RPC daemon itself in the background if it isn't
+   already running, so this one command is all you need. If you ever change
+   `.devcontainer/devcontainer.json`, use "Rebuild Container" from the
+   Codespaces menu so the setup step reruns.
 4. Message your bot `/start` on Telegram to confirm it's alive.
 
-## Local (non-Docker) run
+`.env.sample` is kept purely as a reference for which variables to add as
+Codespaces secrets — you don't need to create an actual `.env` file.
 
-Requires `ffmpeg` and `aria2c` installed on the system.
+## Alternative: Docker
+
+If you'd rather run it in a container instead of directly in the Codespace:
+
+```bash
+docker build -t leech-encode-bot .
+docker run \
+  -e BOT_TOKEN \
+  -e API_ID \
+  -e API_HASH \
+  -e OWNER_ID \
+  -e ARIA2_RPC_SECRET \
+  leech-encode-bot
+```
+
+Or with `docker-compose.yml` (persists downloads/thumbnails/settings across
+rebuilds): `docker compose up -d`.
+
+## Local (non-Codespaces) run
+
+Requires `ffmpeg` and `aria2c` installed on the system, and the same five
+env vars exported into your shell.
 
 ```bash
 pip install -r requirements.txt
-aria2c --enable-rpc --rpc-listen-all=false --rpc-secret=<same as .env> -D --dir=./downloads
-export $(cat .env | xargs)
-python main.py
+python bot.py
 ```
 
 ## Notes

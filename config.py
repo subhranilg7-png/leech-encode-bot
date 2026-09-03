@@ -14,7 +14,9 @@ ARIA2_RPC_SECRET = os.environ.get("ARIA2_RPC_SECRET", "")
 DOWNLOAD_DIR = os.environ.get("DOWNLOAD_DIR", "/home/claude/leech-encode-bot/downloads")
 ENCODE_DIR = os.environ.get("ENCODE_DIR", "/home/claude/leech-encode-bot/encoded")
 THUMB_DIR = os.environ.get("THUMB_DIR", "/home/claude/leech-encode-bot/thumbnails")
-DB_PATH = os.environ.get("DB_PATH", "/home/claude/leech-encode-bot/bot.db")
+# --- MongoDB (metadata: rename mode, thumbnail path, quality preset, RSS feeds) ---
+MONGO_URI = os.environ.get("MONGO_URI", "mongodb://localhost:27017")
+MONGO_DB_NAME = os.environ.get("MONGO_DB_NAME", "leech_encode_bot")
 
 # --- Nyaa.si ---
 NYAA_BASE_URL = "https://nyaa.si"

@@ -37,7 +37,12 @@ leeching.
    Codespaces, then add each of:
    - `BOT_TOKEN`, `API_ID`, `API_HASH` — from @BotFather and https://my.telegram.org
    - `OWNER_ID` — your Telegram user ID
-   - `ARIA2_RPC_SECRET` — any random string
+   - `ARIA2_RPC_SECRET` — any random string you make up yourself
+   - `MONGO_URI` — a MongoDB connection string. Easiest free option:
+     [MongoDB Atlas](https://www.mongodb.com/cloud/atlas/register) → create a
+     free (M0) cluster → Database → Connect → "Drivers" → copy the
+     `mongodb+srv://...` string, filling in your database user's password.
+   - `MONGO_DB_NAME` — optional, defaults to `leech_encode_bot`
    They'll be available as environment variables automatically next time
    you open (or rebuild) the Codespace — no `.env` file needed.
 3. Run it:
@@ -65,6 +70,8 @@ docker run \
   -e API_HASH \
   -e OWNER_ID \
   -e ARIA2_RPC_SECRET \
+  -e MONGO_URI \
+  -e MONGO_DB_NAME \
   leech-encode-bot
 ```
 
@@ -89,4 +96,6 @@ python bot.py
 - Multi-file torrents: the leech step picks the largest file (the episode
   video), skipping .nfo/sample files.
 - All per-user state (rename mode, thumbnail, encode prefs, RSS feeds) lives
-  in `bot.db` (SQLite) — back this file up if you redeploy.
+  in MongoDB, in the `user_settings`, `rss_feeds`, and `pending_rename`
+  collections — it persists automatically across rebuilds since it's stored
+  outside the Codespace, not on local disk.

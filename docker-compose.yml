@@ -7,16 +7,15 @@ services:
       - API_HASH
       - OWNER_ID
       - ARIA2_RPC_SECRET
-      - DB_PATH=/app/data/bot.db
+      - MONGO_URI
+      - MONGO_DB_NAME
     restart: unless-stopped
     volumes:
       - downloads:/app/downloads
       - encoded:/app/encoded
       - thumbnails:/app/thumbnails
-      - data:/app/data
 
 volumes:
   downloads:
   encoded:
   thumbnails:
-  data:

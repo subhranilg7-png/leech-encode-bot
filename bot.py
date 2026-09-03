@@ -72,6 +72,14 @@ def ensure_aria2_running():
     raise RuntimeError("aria2c did not come up in time.")
 
 
+# ---------------- DIAGNOSTIC: catch-all, remove after debugging ----------------
+
+@app.on_message(group=-1)
+async def debug_catch_all(client: Client, message: Message):
+    logger.info(f"DEBUG: got update from chat_id={message.chat.id} text={message.text!r}")
+    print(f"DEBUG: got update from chat_id={message.chat.id} text={message.text!r}", flush=True)
+
+
 # ---------------- basic commands ----------------
 
 @app.on_message(filters.command("start"))

@@ -11,9 +11,10 @@ ARIA2_RPC_URL = os.environ.get("ARIA2_RPC_URL", "http://localhost:6800/rpc")
 ARIA2_RPC_SECRET = os.environ.get("ARIA2_RPC_SECRET", "")
 
 # --- Paths ---
-DOWNLOAD_DIR = os.environ.get("DOWNLOAD_DIR", "/home/claude/leech-encode-bot/downloads")
-ENCODE_DIR = os.environ.get("ENCODE_DIR", "/home/claude/leech-encode-bot/encoded")
-THUMB_DIR = os.environ.get("THUMB_DIR", "/home/claude/leech-encode-bot/thumbnails")
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DOWNLOAD_DIR = os.environ.get("DOWNLOAD_DIR", os.path.join(BASE_DIR, "downloads"))
+ENCODE_DIR = os.environ.get("ENCODE_DIR", os.path.join(BASE_DIR, "encoded"))
+THUMB_DIR = os.environ.get("THUMB_DIR", os.path.join(BASE_DIR, "thumbnails"))
 # --- MongoDB (metadata: rename mode, thumbnail path, quality preset, RSS feeds) ---
 MONGO_URI = os.environ.get("MONGO_URI", "mongodb://localhost:27017")
 MONGO_DB_NAME = os.environ.get("MONGO_DB_NAME", "leech_encode_bot")

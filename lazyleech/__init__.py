@@ -18,7 +18,7 @@ import os
 import logging
 import aiohttp
 from io import BytesIO, StringIO
-from pyrogram import Client
+from pyrogram import Client, enums
 
 API_ID = os.environ.get('API_ID')
 API_HASH = os.environ.get('API_HASH')
@@ -76,7 +76,7 @@ along with this program.  If not, see &lt;https://www.gnu.org/licenses/&gt;.
 '''
 
 logging.basicConfig(level=logging.INFO)
-app = Client('lazyleech', API_ID, API_HASH, plugins={'root': os.path.join(__package__, 'plugins')}, bot_token=BOT_TOKEN, test_mode=TESTMODE, parse_mode='html', sleep_threshold=30)
+app = Client('lazyleech', API_ID, API_HASH, plugins={'root': os.path.join(__package__, 'plugins')}, bot_token=BOT_TOKEN, test_mode=TESTMODE, parse_mode=enums.ParseMode.HTML, sleep_threshold=30)
 session = aiohttp.ClientSession()
 help_dict = dict()
 preserved_logs = []

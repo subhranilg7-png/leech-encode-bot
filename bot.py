@@ -23,10 +23,11 @@ def _ensure_python_deps():
         import lxml.html.clean  # noqa: F401
     except ImportError:
         print('[bootstrap] installing Python requirements...')
-        subprocess.run(
-            [sys.executable, '-m', 'pip', 'install', '-q', '-r', os.path.join(_HERE, 'requirements.txt')],
-            check=True,
+        result = subprocess.run(
+            [sys.executable, '-m', 'pip', 'install', '-r', os.path.join(_HERE, 'requirements.txt')],
         )
+        if result.returncode != 0:
+            print('[bootstrap] WARNING: pip install exited non-zero, see output above for the real error.')
 
 
 def _ensure_system_packages():
@@ -35,7 +36,7 @@ def _ensure_system_packages():
         return
     print(f'[bootstrap] installing system packages: {missing}')
     subprocess.run(['sudo', 'apt-get', 'update'])
-    subprocess.run(['sudo', 'apt-get', 'install', '-y', 'aria2', 'ffmpeg'])
+    subprocess.run(['sudo', 'apt-get', 'install', '-y', '--no-install-recommends', 'aria2', 'ffmpeg'])
     still_missing = [b for b in missing if shutil.which(b) is None]
     if still_missing:
         print(f'[bootstrap] WARNING: could not install {still_missing} automatically; '
@@ -65,27 +66,32 @@ import logging
 import traceback
 
 from pyrogram import idle
+from pyrogram.types import BotCommand
 
-from lazyleech import app, ADMIN_CHATS, STARTUP_CHANNEL, preserved_logs
+from lazyleech import app, ADMIN_CHATS, preserved_logs
 from lazyleech.utils.upload_worker import upload_worker
 
 logging.basicConfig(level=logging.INFO)
 logging.getLogger('pyrogram.syncer').setLevel(logging.WARNING)
 
 
-async def _send_startup_message():
-    me = await app.get_me()
-    text = f'✅ <b>{me.first_name}</b> is now online and ready to leech.'
-    if STARTUP_CHANNEL:
-        try:
-            await app.send_message(STARTUP_CHANNEL, text)
-        except Exception:
-            logging.exception('Failed to send startup message to STARTUP_CHANNEL (%s)', STARTUP_CHANNEL)
-    for i in ADMIN_CHATS:
-        try:
-            await app.send_message(i, text)
-        except Exception:
-            logging.exception('Failed to send startup message to admin chat %s', i)
+BOT_COMMANDS = [
+    BotCommand('start', 'Say hi / check the bot is alive'),
+    BotCommand('help', 'Full command reference'),
+    BotCommand('torrent', 'Leech a magnet link or .torrent file'),
+    BotCommand('directdl', 'Leech a direct download link'),
+    BotCommand('nyaa', 'Search nyaa.si and leech a result'),
+    BotCommand('list', 'Show your active leeches'),
+    BotCommand('cancel', 'Cancel a running leech'),
+    BotCommand('autorename', 'Turn auto-rename on/off'),
+    BotCommand('setrenameformat', 'Set the auto-rename template'),
+    BotCommand('togglecompress', 'Turn direct-file compression on/off'),
+    BotCommand('setquality', 'Set compression quality (480p/720p/1080p)'),
+    BotCommand('mysettings', 'Show your current settings'),
+    BotCommand('thumbnail', 'Set a persistent thumbnail'),
+    BotCommand('watermark', 'Set a persistent watermark'),
+    BotCommand('mediainfo', 'Post detailed media info to Telegraph'),
+]
 
 
 async def main():
@@ -106,7 +112,10 @@ async def main():
 
     asyncio.create_task(_autorestart_worker())
     await app.start()
-    await _send_startup_message()
+    try:
+        await app.set_bot_commands(BOT_COMMANDS)
+    except Exception:
+        logging.exception('Failed to register bot command menu (non-fatal)')
     await idle()
     await app.stop()
 

@@ -26,11 +26,12 @@ BOT_TOKEN = os.environ.get('BOT_TOKEN')
 TESTMODE = os.environ.get('TESTMODE')
 TESTMODE = TESTMODE and TESTMODE != '0'
 
-EVERYONE_CHATS = os.environ.get('EVERYONE_CHATS')
-EVERYONE_CHATS = list(map(int, EVERYONE_CHATS.split(' '))) if EVERYONE_CHATS else []
-ADMIN_CHATS = os.environ.get('ADMIN_CHATS')
-ADMIN_CHATS = list(map(int, ADMIN_CHATS.split(' '))) if ADMIN_CHATS else []
-ALL_CHATS = EVERYONE_CHATS + ADMIN_CHATS
+AUTHORIZED_CHATS = os.environ.get('AUTHORIZED_CHATS', '')
+AUTHORIZED_CHATS = list(map(int, AUTHORIZED_CHATS.split())) if AUTHORIZED_CHATS else []
+# ADMIN_CHATS and ALL_CHATS both point at the same single list now - one
+# env var (AUTHORIZED_CHATS) controls everyone's access, including /exec.
+ADMIN_CHATS = AUTHORIZED_CHATS
+ALL_CHATS = AUTHORIZED_CHATS
 # LICHER_* variables are for @animebatchstash and similar, not required
 LICHER_CHAT = os.environ.get('LICHER_CHAT', '')
 try:
@@ -43,12 +44,6 @@ LICHER_PARSE_EPISODE = os.environ.get('LICHER_PARSE_EPISODE')
 LICHER_PARSE_EPISODE = LICHER_PARSE_EPISODE and LICHER_PARSE_EPISODE != '0'
 
 MONGO_URI = os.environ.get('MONGO_URI', '')
-# Channel (chat id, e.g. -100xxxxxxxxxx) the bot posts a "bot started" message to on boot
-STARTUP_CHANNEL = os.environ.get('STARTUP_CHANNEL', '')
-try:
-    STARTUP_CHANNEL = int(STARTUP_CHANNEL)
-except ValueError:
-    STARTUP_CHANNEL = STARTUP_CHANNEL or None
 
 PROGRESS_UPDATE_DELAY = int(os.environ.get('PROGRESS_UPDATE_DELAY', 10))
 MAGNET_TIMEOUT = int(os.environ.get('LEECH_TIMEOUT', 60))

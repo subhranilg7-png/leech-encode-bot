@@ -14,19 +14,14 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 from pyrogram import Client, filters
-from pyrogram.types import InlineKeyboardButton
-from pykeyboard import InlineKeyboard
 
 @Client.on_message(filters.private & filters.command('start'))
 async def start_cmd(client, message):
+    msg = (
+        "<b>Hi, I'm your leech + encode + rename bot.</b>\n\n"
+        "Send me a magnet link, .torrent file, or direct link to start a leech.\n"
+        "Use /help to see all commands, or /mysettings to check your "
+        "auto-rename and compression settings."
+    )
+    await message.reply(msg)
 
-    msg = f"""
-<b>Hi, I am Torrent King.</b>
-Sorry But Due to some 18+ Leechers I am no longer working in Private, Please Join our Leech/Mirror Group Instead
-        """
-    buttons = InlineKeyboard(row_width=2)
-    buttons.add(
-        InlineKeyboardButton(
-            'Join Now', url='https://t.me/joinchat/I0r_UQNiPHdlYWFl',
-        ))
-    await message.reply(msg, reply_markup=buttons)

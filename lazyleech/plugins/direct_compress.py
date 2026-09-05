@@ -12,6 +12,10 @@ from ..utils.db import get_settings
 from ..utils.upload_worker import upload_queue
 
 VIDEO_AUDIO_MIME_PREFIXES = ('video/', 'audio/')
+VIDEO_AUDIO_EXTENSIONS = (
+    '.mkv', '.mp4', '.avi', '.mov', '.webm', '.wmv', '.flv', '.m4v', '.ts', '.3gp',
+    '.mp3', '.flac', '.wav', '.aac', '.ogg', '.m4a', '.opus',
+)
 
 
 @Client.on_message(filters.chat(ALL_CHATS) & (filters.video | filters.audio | filters.document), group=2)
@@ -28,7 +32,12 @@ async def direct_file_send(client, message):
     if media is None:
         return
     mime_type = getattr(media, 'mime_type', None) or ''
-    is_video_or_audio = bool(message.video or message.audio) or mime_type.startswith(VIDEO_AUDIO_MIME_PREFIXES)
+    file_name = (getattr(media, 'file_name', None) or '').lower()
+    is_video_or_audio = (
+        bool(message.video or message.audio)
+        or mime_type.startswith(VIDEO_AUDIO_MIME_PREFIXES)
+        or file_name.endswith(VIDEO_AUDIO_EXTENSIONS)
+    )
     if not is_video_or_audio:
         return  # e.g. a plain document/image that isn't a video/audio - leave it alone
 

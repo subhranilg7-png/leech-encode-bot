@@ -22,25 +22,74 @@ def _ensure_python_deps():
         from PIL import Image  # noqa: F401
         import lxml.html.clean  # noqa: F401
     except ImportError:
-        print('[bootstrap] installing Python requirements...')
-        result = subprocess.run(
-            [sys.executable, '-m', 'pip', 'install', '-r', os.path.join(_HERE, 'requirements.txt')],
-        )
+        print('[bootstrap] installing Python requirements (this can take a while on a slow connection)...')
+        result = subprocess.run([
+            sys.executable, '-m', 'pip', 'install',
+            '--retries', '10', '--timeout', '120',
+            '-r', os.path.join(_HERE, 'requirements.txt'),
+        ])
         if result.returncode != 0:
-            print('[bootstrap] WARNING: pip install exited non-zero, see output above for the real error.')
+            print('[bootstrap] WARNING: pip install exited non-zero (see output above - often a slow/dropped '
+                  'connection). Retrying once more...')
+            subprocess.run([
+                sys.executable, '-m', 'pip', 'install',
+                '--retries', '10', '--timeout', '120',
+                '-r', os.path.join(_HERE, 'requirements.txt'),
+            ])
+
+
+_LOCAL_BIN = os.path.join(_HERE, 'bin')
+_STATIC_FFMPEG_URL = 'https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz'
+
+
+def _install_apt_package(name):
+    """Install a single apt package on its own, so one broken package
+    elsewhere on the mirror can't block this one."""
+    subprocess.run(['sudo', 'apt-get', 'install', '-y', '--no-install-recommends', '--fix-missing', name])
+
+
+def _download_static_ffmpeg():
+    """Fallback when the Debian ffmpeg package (or its deps) 404 on the
+    mirror: grab a self-contained static build instead, no apt involved."""
+    if shutil.which('ffmpeg'):
+        return
+    print('[bootstrap] apt ffmpeg unavailable, downloading a static ffmpeg build instead...')
+    try:
+        import urllib.request
+        import tarfile
+        os.makedirs(_LOCAL_BIN, exist_ok=True)
+        archive_path = os.path.join(_HERE, 'ffmpeg-static.tar.xz')
+        urllib.request.urlretrieve(_STATIC_FFMPEG_URL, archive_path)
+        with tarfile.open(archive_path) as tar:
+            for member in tar.getmembers():
+                if member.name.endswith(('/ffmpeg', '/ffprobe')):
+                    member.name = os.path.basename(member.name)
+                    tar.extract(member, path=_LOCAL_BIN)
+        os.remove(archive_path)
+        for b in ('ffmpeg', 'ffprobe'):
+            p = os.path.join(_LOCAL_BIN, b)
+            if os.path.isfile(p):
+                os.chmod(p, 0o755)
+        print('[bootstrap] static ffmpeg installed to', _LOCAL_BIN)
+    except Exception as ex:
+        print(f'[bootstrap] WARNING: static ffmpeg download failed ({ex}); compression will not work.')
 
 
 def _ensure_system_packages():
-    missing = [b for b in ('aria2c', 'ffmpeg') if shutil.which(b) is None]
-    if not missing:
+    os.environ['PATH'] = _LOCAL_BIN + os.pathsep + os.environ.get('PATH', '')
+    if shutil.which('aria2c') and shutil.which('ffmpeg'):
         return
-    print(f'[bootstrap] installing system packages: {missing}')
+    print('[bootstrap] installing system packages...')
     subprocess.run(['sudo', 'apt-get', 'update'])
-    subprocess.run(['sudo', 'apt-get', 'install', '-y', '--no-install-recommends', 'aria2', 'ffmpeg'])
-    still_missing = [b for b in missing if shutil.which(b) is None]
+    if not shutil.which('aria2c'):
+        _install_apt_package('aria2')
+    if not shutil.which('ffmpeg'):
+        _install_apt_package('ffmpeg')
+    if not shutil.which('ffmpeg'):
+        _download_static_ffmpeg()
+    still_missing = [b for b in ('aria2c', 'ffmpeg') if shutil.which(b) is None]
     if still_missing:
-        print(f'[bootstrap] WARNING: could not install {still_missing} automatically; '
-              f'install them manually if leech/compress fail.')
+        print(f'[bootstrap] WARNING: still missing {still_missing}; install manually if leech/compress fail.')
 
 
 def _start_aria2_daemon():

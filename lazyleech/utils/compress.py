@@ -21,6 +21,7 @@ async def compress_video(filepath, quality, out_dir):
 
     cmd = [
         'ffmpeg', '-y', '-i', filepath,
+        '-map', '0',
         '-vf', f"scale=-2:'min({height},ih)'",
         '-c:v', 'libx264', '-crf', str(crf), '-preset', 'fast',
         '-c:a', 'aac', '-b:a', abitrate,

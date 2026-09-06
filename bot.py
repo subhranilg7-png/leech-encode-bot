@@ -92,11 +92,42 @@ def _ensure_system_packages():
         print(f'[bootstrap] WARNING: still missing {still_missing}; install manually if leech/compress fail.')
 
 
+def _aria2_rpc_alive(secret):
+    """Return True if something is already answering RPC on 6800 with this secret."""
+    import json
+    import urllib.request
+    payload = json.dumps({
+        'jsonrpc': '2.0', 'id': 'boot-check', 'method': 'aria2.getVersion',
+        'params': ([f'token:{secret}'] if secret else []),
+    }).encode()
+    try:
+        req = urllib.request.Request('http://127.0.0.1:6800/jsonrpc', data=payload, method='POST')
+        with urllib.request.urlopen(req, timeout=3) as resp:
+            body = json.loads(resp.read())
+        return 'result' in body
+    except Exception:
+        return False
+
+
+def _kill_stale_aria2():
+    """Kill any aria2c process left over from a previous run (mismatched secret,
+    port 6800 already bound) so the daemon we start below actually owns the port."""
+    subprocess.run(['pkill', '-f', 'aria2c --enable-rpc'], stderr=subprocess.DEVNULL)
+    time.sleep(1)
+
+
 def _start_aria2_daemon():
     if shutil.which('aria2c') is None:
         return
     secret = os.environ.get('ARIA2_SECRET') or secrets.token_urlsafe(48)
     os.environ['ARIA2_SECRET'] = secret
+    if _aria2_rpc_alive(secret):
+        print('[bootstrap] aria2 RPC already up and authenticating fine, reusing it.')
+        return
+    # Either nothing is running, or something is running with a stale/different
+    # secret (leftover from a previous run) - clear it so we don't end up with
+    # two daemons disagreeing about the secret while only one owns the port.
+    _kill_stale_aria2()
     log_path = os.path.join(_HERE, 'aria2.log')
     log = open(log_path, 'a')
     subprocess.Popen(
@@ -104,6 +135,8 @@ def _start_aria2_daemon():
         stdout=log, stderr=log,
     )
     time.sleep(2)  # give the RPC daemon a moment to come up
+    if not _aria2_rpc_alive(secret):
+        print('[bootstrap] WARNING: aria2 RPC did not come up cleanly - check aria2.log')
 
 
 _ensure_python_deps()
@@ -135,7 +168,9 @@ BOT_COMMANDS = [
     BotCommand('autorename', 'Turn auto-rename on/off'),
     BotCommand('setrenameformat', 'Set the auto-rename template'),
     BotCommand('togglecompress', 'Turn direct-file compression on/off'),
-    BotCommand('setquality', 'Set compression quality (480p/720p/1080p)'),
+    BotCommand('togglemetadata', 'Turn metadata title tagging on/off'),
+    BotCommand('setmetadataformat', 'Set the metadata title template'),
+    BotCommand('encsettings', 'Open the encode-settings panel (codec/CRF/preset/resolution/audio)'),
     BotCommand('mysettings', 'Show your current settings'),
     BotCommand('thumbnail', 'Set a persistent thumbnail'),
     BotCommand('watermark', 'Set a persistent watermark'),

@@ -67,3 +67,22 @@ def build_filename(template, original_name, parsed):
     if ext and not name.lower().endswith(ext.lower()):
         name += ext
     return name
+
+
+def build_metadata_title(template, original_name, parsed):
+    """Same placeholders as build_filename, but for a metadata title string -
+    no extension appended."""
+    ext = __import__('os').path.splitext(original_name)[1]
+    raw_title = original_name[: len(original_name) - len(ext)] if ext else original_name
+    title = _TAG_STRIP.sub(' ', raw_title).replace('.', ' ').replace('_', ' ')
+    title = re.sub(r'\s+', ' ', title).strip() or raw_title
+    values = {
+        'title': title,
+        'season': parsed.get('season') or '01',
+        'episode': parsed.get('episode') or '00',
+        'quality': parsed.get('quality') or '',
+    }
+    try:
+        return template.format(**values)
+    except (KeyError, IndexError):
+        return title

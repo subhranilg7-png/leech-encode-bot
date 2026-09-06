@@ -15,7 +15,27 @@ DEFAULTS = {
     'auto_rename_enabled': False,
     'rename_format': None,       # template string, e.g. "{title} S{season}E{episode} [{quality}]"
     'compress_enabled': False,   # direct-file compression toggle, off by default
-    'compress_quality': '720p',  # one of: 480p, 720p, 1080p
+
+    # Granular encode settings (used by utils/compress.py). Replaces the old
+    # fixed 480p/720p/1080p-only preset system with independent controls,
+    # same axes as the reference encode bots: codec, CRF, preset, 10-bit,
+    # resolution, and audio handling.
+    'encode_format': 'mkv',       # container: mkv, mp4, avi
+    'encode_codec': 'h264',       # h264 or h265
+    'encode_crf': 26,             # lower = higher quality/bigger file, roughly 18-32
+    'encode_preset': 'fast',      # ultrafast..veryslow (ffmpeg x264/x265 presets)
+    'encode_10bit': False,        # 10-bit encoding (h265 only - ignored for h264)
+    'encode_resolution': 'original',  # original, 1080p, 720p, 540p, 480p, 360p
+    'encode_audio_codec': 'aac',  # copy, aac, ac3, opus, mp3
+    'encode_audio_bitrate': '128k',
+    'encode_audio_channels': 'original',  # original, mono, stereo, 5.1
+
+    # Video-container metadata (e.g. the "title" tag players show) - reuses
+    # the same {title}/{season}/{episode}/{quality} template placeholders
+    # as auto-rename, applied to the encoded file's metadata, not just its
+    # filename.
+    'metadata_enabled': False,
+    'metadata_template': '{title} S{season}E{episode}',
 }
 
 async def get_settings(user_id):

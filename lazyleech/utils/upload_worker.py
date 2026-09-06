@@ -32,8 +32,8 @@ from pyrogram.errors.exceptions.bad_request_400 import MessageIdInvalid, Message
 from .. import PROGRESS_UPDATE_DELAY, ADMIN_CHATS, ALL_CHATS, preserved_logs, TESTMODE, SendAsZipFlag, ForceDocumentFlag, LICHER_CHAT, LICHER_STICKER, LICHER_FOOTER, LICHER_PARSE_EPISODE, IGNORE_PADDING_FILE
 from .misc import split_files, get_file_mimetype, format_bytes, get_video_info, generate_thumbnail, return_progress_string, calculate_eta, watermark_photo
 from .db import get_settings
-from .rename_parser import parse_filename, build_filename
-from .compress import compress_video
+from .rename_parser import parse_filename, build_filename, build_metadata_title
+from .compress import compress_video, apply_metadata_only
 
 upload_queue = asyncio.Queue()
 upload_statuses = dict()
@@ -153,16 +153,31 @@ async def _upload_file(client, message, reply, filename, filepath, force_documen
 
     settings = await get_settings(user_id)
     compress_tempdir = None
+    parsed = parse_filename(filename)
+    metadata_title = None
+    if settings['metadata_enabled'] and settings['metadata_template']:
+        metadata_title = build_metadata_title(settings['metadata_template'], filename, parsed)
     if settings['auto_rename_enabled'] and settings['rename_format']:
-        parsed = parse_filename(filename)
         filename = build_filename(settings['rename_format'], filename, parsed)
-    if settings['compress_enabled'] and (await get_file_mimetype(filepath)).startswith('video/'):
+    is_video = (await get_file_mimetype(filepath)).startswith('video/')
+    if settings['compress_enabled'] and is_video:
         compress_tempdir = tempfile.mkdtemp(dir=str(user_id))
         try:
-            filepath = await compress_video(filepath, settings['compress_quality'], compress_tempdir)
+            filepath = await compress_video(filepath, settings, compress_tempdir, metadata_title=metadata_title)
             filename = os.path.basename(filepath)
         except Exception:
             logging.exception('Compression failed for %s, uploading original file', filename)
+            await message.reply_text(
+                f'Compression failed for <code>{html.escape(filename)}</code>, uploading the original file instead.'
+            )
+    elif metadata_title and is_video:
+        # Compression is off but the user still wants the metadata title set -
+        # do a fast stream-copy remux instead of a full re-encode.
+        compress_tempdir = tempfile.mkdtemp(dir=str(user_id))
+        try:
+            filepath = await apply_metadata_only(filepath, metadata_title, compress_tempdir)
+        except Exception:
+            logging.exception('Metadata remux failed for %s, uploading original file', filename)
 
     file_has_big = os.path.getsize(filepath) > 2097152000
     upload_wait = await reply.reply_text(f'Upload of {html.escape(filename)} will start in {PROGRESS_UPDATE_DELAY}s')

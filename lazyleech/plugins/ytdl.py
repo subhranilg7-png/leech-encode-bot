@@ -83,7 +83,7 @@ class YT_Search_X:
 def check_owner(func):
     async def wrapper(_, cq: CallbackQuery):
         user = cq.from_user.id
-        msg_id = cq.message.message_id
+        msg_id = cq.message.id
         gid = cq.message.chat.id
         if [gid, msg_id] in user_search[user]:
             try:
@@ -195,7 +195,7 @@ async def iytdl_inline(client: Client, message: Message):
         reply_markup=buttons,
     )
     await x.delete()
-    user_search[message.from_user.id].append([msg.chat.id, msg.message_id])
+    user_search[message.from_user.id].append([msg.chat.id, msg.id])
 
 
 @Client.on_callback_query(

@@ -207,7 +207,7 @@ async def handle_leech(client, message, gid, reply, user_id, flags):
     torrent_info = await aria2_tell_status(session, gid)
     last_edit = 0
     start_time = time.time()
-    message_identifier = (reply.chat.id, reply.message_id)
+    message_identifier = (reply.chat.id, reply.id)
     leech_statuses[message_identifier] = gid
     download_speed = None
     while torrent_info['status'] in ('active', 'waiting', 'paused'):
@@ -311,7 +311,7 @@ async def cancel_leech(client, message):
     if text:
         gid = text[0].strip()
     elif not getattr(reply, 'empty', True):
-        reply_identifier = (reply.chat.id, reply.message_id)
+        reply_identifier = (reply.chat.id, reply.id)
         task = upload_statuses.get(reply_identifier)
         if task:
             task, starter_id = task

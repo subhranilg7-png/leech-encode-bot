@@ -1,6 +1,6 @@
 aiohttp[speedups]==3.9.5
 feedparser
-pyrogram
+pyrogram==2.0.106
 tgcrypto
 lxml_html_clean
 natsort

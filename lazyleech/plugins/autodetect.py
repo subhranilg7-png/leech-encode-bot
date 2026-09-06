@@ -61,14 +61,14 @@ async def autodetect(client, message):
             [InlineKeyboardButton('Individual Files', 'autodetect_individual'), InlineKeyboardButton('Zip', 'autodetect_zip'), InlineKeyboardButton('Force Document', 'autodetect_file')],
             [InlineKeyboardButton('Delete', 'autodetect_delete')]
         ]))
-        auto_detects[(reply.chat.id, reply.message_id)] = link, message.from_user.id, (initiate_torrent if is_torrent else initiate_magnet)
+        auto_detects[(reply.chat.id, reply.id)] = link, message.from_user.id, (initiate_torrent if is_torrent else initiate_magnet)
 
 answered = set()
 answer_lock = asyncio.Lock()
 @Client.on_callback_query(custom_filters.callback_data(['autodetect_individual', 'autodetect_zip', 'autodetect_file', 'autodetect_delete']) & custom_filters.callback_chat(ALL_CHATS))
 async def autodetect_callback(client, callback_query):
     message = callback_query.message
-    identifier = (message.chat.id, message.message_id)
+    identifier = (message.chat.id, message.id)
     result = auto_detects.get(identifier)
     if not result:
         await callback_query.answer('I can\'t get your message, please try again.', show_alert=True, cache_time=3600)
